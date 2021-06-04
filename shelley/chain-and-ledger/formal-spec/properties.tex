@@ -31,8 +31,10 @@ will not pass either.
 
 First we define the header-only version of the $\mathsf{CHAIN}$ transition,
 which we call $\mathsf{CHAINHEAD}$.
-It is very similiar to $\mathsf{CHAIN}$, the only difference being that
+It is very similar to $\mathsf{CHAIN}$, the only difference being that
 it does not call $\mathsf{BBODY}$.
+
+\clearpage
 
 \begin{figure}[ht]
   \begin{equation}\label{eq:chain-head}
@@ -40,60 +42,70 @@ it does not call $\mathsf{BBODY}$.
     {
       \var{bh} \leteq \bheader{block}
       &
-      \var{gkeys} \leteq \fun{getGKeys}~\var{nes}
+      \var{bhb} \leteq \bhbody{bh}
       &
-      \var{s} \leteq \bslot{(\bhbody{bh})}
+      \var{s} \leteq \bslot{bhb}
       \\
-      (\wcard,~\wcard,~\wcard,~(\wcard,~\wcard,~\wcard,~\var{pp}),~\wcard,~\wcard,\wcard) \leteq \var{nes}
+      (\wcard,~\wcard,~\wcard,~(\wcard,~\wcard,~\wcard,~\wcard,~\var{pp}),~\wcard,~\wcard) \leteq \var{nes}
       \\~\\
-      \fun{chainChecks}~\var{pp}~\var{bh}
+      \fun{prtlSeqChecks}~\var{lab}~\var{bh}\\
+      \fun{chainChecks}~
+        \MaxMajorPV~(\fun{maxHeaderSize}~\var{pp},~\fun{maxBlockSize}~\var{pp},~\fun{pv}~\var{pp})~
+        \var{bh}
       \\~\\
       {
-        {\begin{array}{c}
-           \var{gkeys} \\
-         \end{array}}
         \vdash\var{nes}\trans{\hyperref[fig:rules:tick]{tick}}{\var{s}}\var{nes'}
       } \\~\\
-      (\var{e_1},~\wcard,~\wcard,~\wcard,~\wcard,~\wcard,\wcard)
+      (\var{e_1},~\wcard,~\wcard,~\wcard,~\wcard,~\wcard)
         \leteq\var{nes} \\
-      (\var{e_2},~\wcard,~\wcard,~\var{es},~\wcard,~\var{pd},\var{osched})
+      (\var{e_2},~\wcard,~\wcard,~\var{es},~\wcard,~\wcard,~\var{pd})
         \leteq\var{nes'} \\
-        (\wcard,~\wcard,\var{ls},~\wcard,~\var{pp'})\leteq\var{es}\\
+        (\var{acnt},~\wcard,\var{ls},~\wcard,~\var{pp'})\leteq\var{es}\\
         ( \wcard,
-          ( (\wcard,~\wcard,~\wcard,~\wcard,~\wcard,~\var{genDelegs}),~
+          ( (\wcard,~\wcard,~\wcard,~\wcard,~\var{genDelegs},~\wcard),~
           (\wcard,~\wcard,~\wcard)))\leteq\var{ls}\\
           \var{ne} \leteq  \var{e_1} \neq \var{e_2}\\
+          \eta_{ph} \leteq \prevHashToNonce{(\lastAppliedHash{lab})} \\
       {
         {\begin{array}{c}
-            \var{pp'} \\
-            \var{osched} \\
+        \var{pp'} \\
+        \eta_c \\
+        \eta_\var{ph} \\
+        \end{array}}
+        \vdash
+        {\left(\begin{array}{c}
+        \eta_0 \\
+        \eta_h \\
+        \end{array}\right)}
+        \trans{\hyperref[fig:rules:tick-nonce]{tickn}}{\var{ne}}
+        {\left(\begin{array}{c}
+        \eta_0' \\
+        \eta_h' \\
+        \end{array}\right)}
+      }\\~\\~\\
+      {
+        {\begin{array}{c}
+            (\fun{d}~\var{pp'}) \\
             \var{pd} \\
             \var{genDelegs} \\
-            \var{s_{now}} \\
-            \var{ne}
+            \eta_0' \\
          \end{array}}
         \vdash
         {\left(\begin{array}{c}
               \var{cs} \\
-              \var{lab} \\
-              \eta_0 \\
               \eta_v \\
               \eta_c \\
-              \eta_h \\
         \end{array}\right)}
         \trans{\hyperref[fig:rules:prtcl]{prtcl}}{\var{bh}}
         {\left(\begin{array}{c}
               \var{cs'} \\
-              \var{lab'} \\
-              \eta_0' \\
               \eta_v' \\
               \eta_c' \\
-              \eta_h' \\
         \end{array}\right)}
       } \\~\\~\\
+      \var{lab'}\leteq (\bblockno{bhb},~\var{s},~\bhash{bh} ) \\
     }
     {
-      \var{s_{now}}
       \vdash
       {\left(\begin{array}{c}
             \var{nes} \\
@@ -104,7 +116,7 @@ it does not call $\mathsf{BBODY}$.
             \eta_h \\
             \var{lab} \\
       \end{array}\right)}
-      \trans{chainhead}{\var{bh}}
+      \trans{chainhead}{\var{block}}
       {\left(\begin{array}{c}
             \varUpdate{\var{nes}'} \\
             \varUpdate{\var{cs}'} \\
