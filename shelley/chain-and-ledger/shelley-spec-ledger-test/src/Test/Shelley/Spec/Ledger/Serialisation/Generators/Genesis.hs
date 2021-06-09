@@ -20,6 +20,7 @@ import Data.Fixed
 import Data.IP (IPv4, IPv6, fromHostAddress, fromHostAddress6)
 import qualified Data.Map.Strict as Map
 import Data.Proxy
+import Data.Ratio
 import qualified Data.Sequence.Strict as StrictSeq
 import qualified Data.Set as Set
 import Data.Time.Clock (NominalDiffTime, UTCTime)
@@ -205,10 +206,14 @@ genProtVer =
     <$> genNatural (Range.linear 0 1000)
     <*> genNatural (Range.linear 0 1000)
 
+-- | Only numbers in Scientific format can roundtrip JSON, so we only generate numbers
+-- that can be represented in a decimal form and that can be represeted by Ratio Word64
 genUnitInterval :: Gen UnitInterval
-genUnitInterval =
-  truncateUnitInterval
-    <$> Gen.realFrac_ (Range.linearFrac 0.01 1)
+genUnitInterval = do
+  let maxExp = 19
+  exp10 <- Gen.int (Range.linear 0 maxExp)
+  num <- Gen.word64 (Range.linear 0 (10 ^ exp10))
+  pure (truncateUnitInterval (num % (10 ^ maxExp)))
 
 genGenesisDelegationList ::
   CC.Crypto crypto =>
