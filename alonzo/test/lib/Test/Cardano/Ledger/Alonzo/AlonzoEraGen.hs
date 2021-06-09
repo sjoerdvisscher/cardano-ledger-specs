@@ -13,6 +13,7 @@
 module Test.Cardano.Ledger.Alonzo.AlonzoEraGen where
 
 import Cardano.Binary (ToCBOR (toCBOR), serializeEncoding')
+import Cardano.Ledger.Address (Addr (..))
 import Cardano.Ledger.Alonzo (AlonzoEra)
 import Cardano.Ledger.Alonzo.Data as Alonzo (AuxiliaryData (..), Data (..), DataHash)
 import Cardano.Ledger.Alonzo.Language (Language (PlutusV1))
@@ -36,6 +37,7 @@ import Cardano.Ledger.AuxiliaryData (AuxiliaryDataHash)
 import Cardano.Ledger.BaseTypes (Network (..), StrictMaybe (..))
 import Cardano.Ledger.Coin (Coin (..))
 import qualified Cardano.Ledger.Core as Core (PParams, PParamsDelta, Script, TxOut)
+import Cardano.Ledger.Credential (Credential (..))
 import qualified Cardano.Ledger.Crypto as CC
 import Cardano.Ledger.Era (Crypto, Era (..), ValidateScript (..))
 import Cardano.Ledger.Hashes (ScriptHash)
@@ -61,13 +63,11 @@ import Data.Set as Set
 import Data.Word (Word64)
 import Flat (flat)
 import GHC.Records (HasField (..))
-import Plutus.V1.Ledger.Api (defaultCekCostModelParams)
+import Plutus.V1.Ledger.Api (defaultCostModelParams)
 import qualified Plutus.V1.Ledger.Scripts as P
 import qualified PlutusTx as P (Data (..), compile)
 import qualified PlutusTx as Plutus
 import qualified PlutusTx.Prelude as P
-import Shelley.Spec.Ledger.Address (Addr (..))
-import Shelley.Spec.Ledger.Credential (Credential (..))
 import Shelley.Spec.Ledger.PParams (Update)
 import Shelley.Spec.Ledger.TxBody (DCert, TxIn, Wdrl)
 import Shelley.Spec.Ledger.UTxO (UTxO (..))
@@ -115,7 +115,7 @@ phase2scripts =
 
 -- | A cost model that sets everything as being free
 freeCostModel :: CostModel
-freeCostModel = CostModel $ 0 <$ fromJust defaultCekCostModelParams
+freeCostModel = CostModel $ 0 <$ fromJust defaultCostModelParams
 
 -- ================================================================
 
