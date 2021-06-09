@@ -71,6 +71,7 @@ import Cardano.Prelude (NFData, cborError)
 import Cardano.Slotting.EpochInfo
 import Cardano.Slotting.Time (SystemStart)
 import Control.Exception (throw)
+import Control.Monad (when)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Aeson (FromJSON (..), ToJSON (..))
 import qualified Data.Binary.Put as B
@@ -81,7 +82,7 @@ import qualified Data.Fixed as FP (Fixed, HasResolution, resolution)
 import Data.Functor.Identity
 import Data.Maybe.Strict
 import Data.Ratio (Ratio, denominator, numerator, (%))
-import Data.Scientific (Scientific)
+import Data.Scientific (Scientific, base10Exponent, coefficient, normalize, scientific)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Text.Encoding (encodeUtf8)
@@ -120,7 +121,15 @@ instance FromCBOR UnitInterval where
       Just u -> pure u
 
 instance ToJSON UnitInterval where
-  toJSON ui = toJSON (fromRational (unitIntervalToRational ui) :: Scientific)
+  toJSON = toJSON . toScientificRoundToDecimalPlaces 19
+
+toScientificRoundToDecimalPlaces :: Int -> UnitInterval -> Scientific
+toScientificRoundToDecimalPlaces exp10 (UnsafeUnitInterval ui) =
+  scientific
+    ((toInteger (numerator ui) * scale) `quot` toInteger (denominator ui))
+    (- exp10)
+  where
+    scale = 10 ^ exp10
 
 instance FromJSON UnitInterval where
   parseJSON v = do
@@ -128,8 +137,15 @@ instance FromJSON UnitInterval where
     either fail pure $ fromScientificUnitInterval d
 
 fromScientificUnitInterval :: Scientific -> Either String UnitInterval
-fromScientificUnitInterval d =
-  maybe (Left "The value must be between 0 and 1 (inclusive)") Right $ mkUnitInterval (realToFrac d)
+fromScientificUnitInterval (normalize -> num) = do
+  when (coeff < 0) $ Left "Negative values aren't allowed - protect against underflow"
+  when (coeff > toInteger (maxBound :: Word64) || exp10 < 0 || exp10 > 19) $
+    Left "Precision is too large - protection against overflow"
+  maybe (Left "Value is outside of [0, 1] range") Right $
+    mkUnitInterval (fromInteger coeff % 10 ^ exp10)
+  where
+    coeff = coefficient num
+    exp10 = negate (base10Exponent num)
 
 unitIntervalToRational :: UnitInterval -> Rational
 unitIntervalToRational (UnsafeUnitInterval x) =
